@@ -1,8 +1,43 @@
 /**
- *
+ * A Red-black tree implementation. Values are stored in the tree
  */
 public class RedBlackTree<V extends Comparable<? super V>> {
     Node<V> root;
+
+    /**
+     * Add the specified value to the tree.
+     *
+     * @param x the value to be added
+     */
+    public void add(V x) {
+        insert(insertWhere(root, new Node<V>(x)));
+    }
+
+    /**
+     * Removes the specified value from the tree if it is present. Returns true if the tree contained the element.
+     *
+     * @param value the value to be removed from this tree
+     * @return true if the tree contained the specified value
+     */
+    public boolean remove(V value) {
+        return delete(value);
+    }
+
+    /**
+     * Removes all of the values from the tree.
+     */
+    public void clear() {
+        root = null;
+    }
+
+    /**
+     * Return true if the tree contains no values.
+     *
+     * @return true if the tree contains no values
+     */
+    public boolean isEmpty() {
+        return root == null;
+    }
 
     /**
      * Returns true if tree contains the specified value.
@@ -15,12 +50,66 @@ public class RedBlackTree<V extends Comparable<? super V>> {
     }
 
     /**
-     * Retrieves the minimum value in the tree.
+     * Returns the least value in the tree greater then or equal to the given value, or null if there is no such value.
      *
-     * @return the minimum value.
+     * @param value the value to match
+     * @return the least value greater than or equal to the specified value, or null if there is no such value
      */
-    public V min() {
+    public V ceiling(V value) {
         Node<V> node = root;
+
+        while (node != null) {
+            int compare = node.value.compareTo(value);
+            if (compare == 0 || compare > 0 && node.right == null) {
+                return node.value;
+            }
+
+            if (node.left != null && value.compareTo(last(node.left)) <= 0) {
+                node = node.left;
+            } else {
+                node = node.right;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the least value in the tree strictly greater then the given value, or null if there is no such value.
+     *
+     * @param value the value to match
+     * @return the least value greater than the value, or null is there is no such value
+     */
+    public V higher(V value) {
+        Node<V> node = root;
+
+        while (node != null) {
+            int compare = node.value.compareTo(value);
+            if (compare > 0 && node.isChildless()) {
+                return node.value;
+            }
+
+            if (node.left != null && value.compareTo(last(node.left)) < 0) {
+                node = node.left;
+            } else {
+                node = node.right;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Retrieves the first (lowest) value in the tree.
+     *
+     * @return the first value.
+     */
+    public V first() {
+        return first(root);
+    }
+
+    private V first(Node<V> node) {
+        if (node == null) {
+            return null;
+        }
         while (node.left != null) {
             node = node.left;
         }
@@ -28,20 +117,43 @@ public class RedBlackTree<V extends Comparable<? super V>> {
     }
 
     /**
-     * Retrieves the minimum value in the tree.
+     * Retrieves the last (highest) value in the tree.
      *
-     * @return the minimum value.
+     * @return the last value.
      */
-    public V max() {
-        Node<V> node = root;
+    public V last() {
+        return last(root);
+    }
+
+    private V last(Node<V> node) {
+        if (node == null) {
+            return null;
+        }
         while (node.right != null) {
             node = node.right;
         }
         return node.value;
     }
 
+    /**
+     * Returns the number of values in the tree.
+     *
+     * @return the number of values in the tree
+     */
     public int size() {
-        return root.size();
+        return root == null ? 0 : root.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s[%s (%d)]", getClass().getSimpleName(), root, size());
+    }
+
+    private void setRoot(Node<V> node) {
+        root = node;
+        if (node != null) {
+            root.setBlack();
+        }
     }
 
     private Node<V> find(V value) {
@@ -59,32 +171,36 @@ public class RedBlackTree<V extends Comparable<? super V>> {
     }
 
     private void rotateLeft(Node<V> node) {
-        Node<V> right = node.right;
-        replace(node, right);
-        node.right = right.left;
-        if (right.left != null) {
-            right.left.parent = node;
+        if (node != null) {
+            Node<V> right = node.right;
+            replace(node, right);
+            node.right = right == null ? null : right.left;
+            if (right != null) {
+                if (right.left != null) {
+                    right.left.parent = node;
+                }
+                right.left = node;
+            }
+            node.parent = right;
         }
-        right.left = node;
-        node.parent = right;
     }
 
     private void rotateRight(Node<V> node) {
-        Node<V> left = node.left;
-        replace(node, left);
-        node.left = left.right;
-        if (left.right != null) {
-            left.right.parent = node;
+        if (node != null) {
+            Node<V> left = node.left;
+            replace(node, left);
+            node.left = left == null ? null : left.right;
+            if (left != null) {
+                if (left.right != null) {
+                    left.right.parent = node;
+                }
+                left.right = node;
+            }
+            node.parent = left;
         }
-        left.right = node;
-        node.parent = left;
     }
 
-    void insert(V x) {
-        insert(insertWhere(root, new Node<V>(x)));
-    }
-
-    Node<V> insertWhere(Node<V> parent, Node<V> node) {
+    private Node<V> insertWhere(Node<V> parent, Node<V> node) {
         if (parent == null) {
             node.setBlack();
         } else {
@@ -109,7 +225,7 @@ public class RedBlackTree<V extends Comparable<? super V>> {
 
     private void insert(Node<V> node) {
         if (root == null) {
-            root = node;
+            setRoot(node);
         }
         insertCase1(node);
     }
@@ -165,7 +281,7 @@ public class RedBlackTree<V extends Comparable<? super V>> {
         }
     }
 
-    void delete(V x) {
+    private boolean delete(V x) {
         Node<V> node = find(x);
         if (node != null) {
             if (!isLeaf(node.left) && !isLeaf(node.right)) {
@@ -180,6 +296,7 @@ public class RedBlackTree<V extends Comparable<? super V>> {
             }
             replace(node, child);
         }
+        return node != null;
     }
 
     private void deleteCase1(Node<V> node) {
@@ -235,15 +352,16 @@ public class RedBlackTree<V extends Comparable<? super V>> {
         if (node == node.parent.left &&
                 sibling != null &&
                 sibling.isBlack() &&
-                isBlack(sibling.right) &&
-                isBlack(sibling.left)) {
+                isRed(sibling.left) &&
+                isBlack(sibling.right)) {
             sibling.setRed();
             if (sibling.left != null) sibling.left.setBlack();
             rotateRight(sibling);
         } else if (node == node.parent.right &&
                 sibling != null &&
+                isBlack(sibling) &&
                 isBlack(sibling.left) &&
-                isBlack(sibling.right)) {
+                isRed(sibling.right)) {
             sibling.setRed();
             if (sibling.right != null) sibling.right.setBlack();
             rotateLeft(sibling);
@@ -253,25 +371,32 @@ public class RedBlackTree<V extends Comparable<? super V>> {
 
     private void deleteCase6(Node<V> node) {
         Node<V> sibling = node.sibling();
-        if (sibling != null) {
-            if (node.parent.isBlack()) {
-                sibling.setBlack();
-            } else {
-                sibling.setRed();
-            }
-        }
-        node.parent.setBlack();
-        if (sibling != null) {
-            if (node == node.parent.left) {
-                sibling.right.setBlack();
-            } else {
-                sibling.left.setBlack();
-            }
-        }
+        setColorOfOther(sibling, node.parent);
+        setBlack(node.parent);
         if (node == node.parent.left) {
+            setBlack(sibling.right);
             rotateLeft(node.parent);
         } else {
+            setBlack(sibling.left);
             rotateRight(node.parent);
+        }
+    }
+
+    private void setBlack(Node<V> node) {
+        if (node != null) {
+            node.setBlack();
+        }
+    }
+
+    private void setRed(Node<V> node) {
+        if (node != null) {
+            node.setRed();
+        }
+    }
+
+    private void setColorOfOther(Node<V> node, Node<V> other) {
+        if (node != null && other != null) {
+            node.color = other.color;
         }
     }
 
@@ -303,7 +428,7 @@ public class RedBlackTree<V extends Comparable<? super V>> {
 
     private void replace(Node<V> node, Node<V> replacement) {
         if (node.isRoot()) {
-            root = replacement;
+            setRoot(replacement);
         } else {
             if (node == node.parent.left) {
                 node.parent.left = replacement;

@@ -1,5 +1,5 @@
 /**
- *
+ * A Red-black tree node. The node value must implement the {@link Comparable} interface.
  */
 class Node<V extends Comparable<? super V>> {
     enum Color {Red, Black}
@@ -35,6 +35,10 @@ class Node<V extends Comparable<? super V>> {
         return parent == null;
     }
 
+    boolean isChildless() {
+        return left == null && right == null;
+    }
+
     Node<V> grandparent() {
         if (parent != null) {
             return parent.parent;
@@ -68,7 +72,9 @@ class Node<V extends Comparable<? super V>> {
 
     @Override
     public String toString() {
-        return String.format("%s[%s, %s]", getClass().getSimpleName(), value, color);
+        String leftInfo = left == null ? "" : String.format(" [left %s, %s]", left.value, left.color);
+        String rightInfo = right == null ? "" : String.format(" [right %s, %s]", right.value, right.color);
+        return String.format("%s[%s, %s%s%s]", getClass().getSimpleName(), value, color, leftInfo, rightInfo);
     }
 }
 
